@@ -116,4 +116,13 @@ export class PokemonModule {}
     const pokemon = await this.pokemonModel.create(createPokemonDto)
     
     return pokemon;
-    ```
+```
+
+
+## Validar y eliminar en una sola línea
+
+```
+    const  {deletedCount} = await this.pokemonModel.deleteOne({_id:id})
+    if(deletedCount===0) throw new BadRequestException(`Pokemos with id ${id} not found`)
+    return ;
+```
