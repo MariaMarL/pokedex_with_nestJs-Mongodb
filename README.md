@@ -52,7 +52,7 @@ Agregar MongooseModule.forRoot('path/nombreDB)
 export class AppModule {}
 ```
 
-## 3. Crear el esquema
+## 3. Crear la entidad (esquema)
 
 En una clase entidad, es la que hace una referencia a como vamos a grabar en nuestra db
 
@@ -97,9 +97,9 @@ En el pokemonModule importar Mongoose.forFeature() para crear el esquema
 export class PokemonModule {}
 ```
 
-  ***ForRoot() para crear la conexión con mongo***
+  ***`ForRoot()` para crear la conexión con mongo***
 
-  ***ForFeature() para crear el esquema***
+  ***`ForFeature()` para crear el esquema***
 
 ## ***Usage***
 
@@ -131,3 +131,80 @@ export class PokemonModule {}
     if(deletedCount===0) throw new BadRequestException(`Pokemos with id ${id} not found`)
     return ;
 ```
+
+## ***Query Parámeters***
+
+Son los parámetros que se reciben en la url, eg:
+``` localhost:3000/api/v2/pokemon?limit=10&offset=5 ```
+
+
+```
+  @Get()
+  findAll( @Query() paginationDto: PaginationDto) {
+    console.log({paginationDto});
+    
+    return this.pokemonService.findAll();
+  }
+```
+Allí estoy recibiendo paramámetros llamados paginationDto, que son del tipo PaginationDto, por lo que deben 
+seguir su estructura. Este dto está de la siguiente manera:
+```
+import { IsOptional, IsPositive, Min } from "class-validator";
+
+export class PaginationDto {
+
+    @IsOptional()
+    @IsPositive()
+    @Min(1)
+    limit: number;
+
+    @IsOptional()
+    @IsPositive()
+    offset: number;
+}
+```
+Por lo tanto sólo recibirá esos dos parámetros, limit y offset y sus valores deben respetar las validaciones, si estos valores no cumplen, o si se envía un parámetro diferente a limit y offset el programa arrojará un error.
+
+Estos query vienen como string, por lo que en la configuración global se transforman para que siempre sean recibidos como number, así:
+
+```
+  app.useGlobalPipes(             //configuración global de los pipes
+    new ValidationPipe({
+      whitelist: true,              //borra todos los datos que sobran     
+      forbidNonWhitelisted: true,   // Lanza un error si se ponen datos de más,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true
+      }
+    })),
+```
+
+## ***Variables de entorno***
+
+En estas se definen las llaves de acceso. Son necesarias porque nuestra app va a correr en diferentes ambientes y nosotros debemos estar preparados para hacer los cambios respectivos dependiendo de la necesidad.
+
+Para la creación y uso de las variables de entorno:
+  
+  1. Crear archivo `.env` en el `root` de nuestra app.
+  2. Ignorarlo en el `.gitignore` -> .env y ya
+  3. instalar la configuración ``npm i @nest/config``
+  4. en el `app.module` en `imports` agregar de primero `[ConfigModule.forRoot()],`
+
+```
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+
+    MongooseModule.forRoot(process.env.MONGODB), 
+    PokemonModule, 
+
+  ],
+  controllers: [],
+  providers: [],
+})
+export class AppModule {}
+```
+
+5. y ya podría ser usada con el comando `process.env.NOMBRE`, eg. `process.env.MONGODB`, 
+
+  ***`importante`: las variables de entorno siempre vienen por defecto como `string`, por lo que en caso de ser requeridas como `number` es necesario convertirlas.***

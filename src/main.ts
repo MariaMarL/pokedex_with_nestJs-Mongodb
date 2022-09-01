@@ -5,14 +5,18 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix('api/v2')
+  app.setGlobalPrefix('api/v2')   //poner prefijo a todos los endpoints
   
-  app.useGlobalPipes( 
+  app.useGlobalPipes(             //configuración global de los pipes
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
+      whitelist: true,              //borra todos los datos que sobran     
+      forbidNonWhitelisted: true,   // Lanza un error si se ponen datos de más,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true
+      }
     })),
 
-  await app.listen(3000);
+  await app.listen(3000);           //configura el puerto en el que correrá la app.
 }
 bootstrap();
