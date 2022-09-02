@@ -20,11 +20,17 @@ npm i -g @nestjs/cli
 docker-compose up -d
 ```
 
-5. Reconstruir la base de datos con la semilla 
+5. Clonar el archivo **.env.template** y renombrar la copia a **.env**
+
+6. Llenar las variables de entorno definidas en el **.env**
+
+7. Ejecutar la app en dev con el comando: `npm run start:dev`
+
+8. Reconstruir la base de datos con la semilla 
+
 ```
 localhost:3000/api/v2/seed
 ```
-
 ## Stack Usado
 * MongoDB
 * Nest 
@@ -208,3 +214,192 @@ export class AppModule {}
 5. y ya podría ser usada con el comando `process.env.NOMBRE`, eg. `process.env.MONGODB`, 
 
   ***`importante`: las variables de entorno siempre vienen por defecto como `string`, por lo que en caso de ser requeridas como `number` es necesario convertirlas.***
+
+6. Configuración loader
+
+Es una función para mapear mis variables de entorno.
+
+Para esto
+* Creo un folder `config` y dentro de este el archivo `env.config.ts` que contendrá la función que se encarga de mapear las variables.
+
+    ```
+    export const EnvConfiguration = () => ({
+        environment: process.env.NODE_ENV || 'dev',
+        mongodb: process.env,
+        port: process.env.PORT || 3002,
+        defaultLimit: process.env.DEFAULT_LIMIT || 7
+    })
+    ```
+* Este archivo lo importamos en `app.module`, dentro de `ConfigModule.forRoot({ load: nombreFunción})`
+
+    ```
+    @Module({
+      imports: [
+        ConfigModule.forRoot({
+          load: [ EnvConfiguration]
+        }),
+      ],
+      controllers: [],
+      providers: [],
+    })
+    export class AppModule {}
+    ```
+
+Luego se utiliza el `ConfigurationService` para poder utilizar la configuración de variables de entorno que se configuraron en el archivo `env.config.ts`
+para esto:
+
+  * Inyectamos en el constructor el `configService: ConfigService`
+
+    ```
+      constructor(
+        @InjectModel( Pokemon.name )
+        private readonly pokemonModel:Model<Pokemon>,
+
+        private readonly configService: ConfigService
+      ){}
+    ```
+
+    y lo importarmos de `'@nestjs/config';`
+
+  * luego en el module en el que estemos trabajando, eg. `pokemon.module` importamos el `ConfigService`.
+
+    ```
+    import { ConfigModule } from '@nestjs/config';
+
+    @Module({
+      controllers: [PokemonController],
+      providers: [PokemonService],
+      imports: [
+        ConfigModule,
+        ],
+    })
+    export class PokemonModule {}
+    ```
+
+  * Para usarlo tenemos dos opciones
+    - `configService.getOrThrow('SEED');` -> Busca la variable y si no la encuentra arroja un error.
+    - `configService.get<number> ('defaultLimit')` -> sólo busca la variable pero no arroja el error.
+
+
+    Entonces creamos una variable 
+    
+      ```
+      private defaultLimit: number;
+      ```
+
+    luego la asignamos dentro del constructor 
+      ```
+        constructor(
+      @InjectModel( Pokemon.name )
+      private readonly pokemonModel:Model<Pokemon>,
+
+      private readonly configService: ConfigService
+    ){
+
+      // console.log(configService.getOrThrow('SEED'));
+      this.defaultLimit = configService.get<number>('defaultLimit')
+      
+    }
+    ```
+    y luego podrá ser asignada donde sea necesaria. 
+    
+    `const { limit = this.defaultLimit, offset =0} = paginationDto;`
+
+ ***`Importante:` para que las variables de entorno sean reconocidas se debe bajar y volver a subir el servicio.***
+
+ ***`Nota`: Las variables de entorno se definen en el archivo `.env` y en el archivo `config/env.config.ts` se crea la función para manejar esas variables de entorno y qué hacer en caso de encontrar una que no esté definida, así también poder darle valores por defecto.***
+
+***`Nota2:` En los buildingBlock(Services) se puede usar el configService, pero cuando se encuentra fuera de los buildingBlock(main) ya no funciona y toca utilizar process.env.NAME.***
+
+## ***Joi***
+
+  Sirva para:
+    * Validar
+    * Lanzar errores
+    * Poner valores por defecto
+    * Revisar que un objeto luzca de la manera esperada
+
+  Instalación `npm i joi`, 
+  Para usarlo hay que importarlo `import * as Joi from "joi";`
+
+  Para usarlo lo importamos en app.module; puede trabajar en conjunto con el load, el load hace conversiones y mapeo y el joi valida que se vean como se espera.
+  ```
+  @Module({
+    imports: [
+      ConfigModule.forRoot({
+        load: [ EnvConfiguration],
+        validationSchema: joiValidationSchema,
+      }),
+    ],
+    controllers: [],
+    providers: [],
+  })
+  export class AppModule {}
+  ```
+
+  ### **Ejemplo**
+  ```
+  const schema = Joi.object({
+      username: Joi.string()
+          .alphanum()
+          .min(3)
+          .max(30)
+          .required(),
+
+      password: Joi.string()
+          .pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')),
+
+      repeat_password: Joi.ref('password'),
+
+      access_token: [
+          Joi.string(),
+          Joi.number()
+      ],
+
+      birth_year: Joi.number()
+          .integer()
+          .min(1900)
+          .max(2013),
+
+      email: Joi.string()
+          .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } })
+  })
+      .with('username', 'birth_year')
+      .xor('password', 'access_token')
+      .with('password', 'repeat_password');
+
+
+  schema.validate({ username: 'abc', birth_year: 1994 });
+  // -> { value: { username: 'abc', birth_year: 1994 } }
+
+  schema.validate({});
+  // -> { value: {}, error: '"username" is required' }
+  ```
+
+  El `validationSchema` va a encargarse de que tienen que estar esas variables de entorno que son necesarias para que ejecute y el buen funcionamiento de la aplicación.
+
+  ## ***Despliege en Heroku***
+
+  1. Intercabiar las siguiented líneas en el package.json
+
+      _**Antes**_
+
+      ``` 
+        "start": "node dist/main",
+        "start:prod": "nest start",
+      ```
+
+      _**Después**_
+
+      ```
+        "start": "nest start",
+        "start:prod": "node dist/main",
+      ```
+  2. En el main.ts asegurarse que el `await app.listen(process.env.PORT)` esté con `(process.env.PORT)` y no directamente con el puerto, eg. 3000, porque este puerto será asignado por heroku.
+
+  3. En la página de heroku logearse y crear una nueva app.
+  4. Verificar que se tiene Heroku Cli instalado `heroku --version`.
+  5. git add.
+  6. git commit -m "despliegue a heroku"
+  7.  `heroku git:remote -a pokedex-fhj`
+  8. `git push heroku master`

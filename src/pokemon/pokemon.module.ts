@@ -3,11 +3,14 @@ import { PokemonService } from './pokemon.service';
 import { PokemonController } from './pokemon.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Pokemon, PokemonSchema } from './entities/pokemon.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   controllers: [PokemonController],
   providers: [PokemonService],
-  imports: [MongooseModule.forFeature([  //crea el esquema
+  imports: [
+    ConfigModule,
+    MongooseModule.forFeature([  //crea el esquema
     {
       name: Pokemon.name,
       schema: PokemonSchema,

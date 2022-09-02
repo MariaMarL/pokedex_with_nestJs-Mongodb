@@ -17,6 +17,7 @@ async function bootstrap() {
       }
     })),
 
-  await app.listen(3000);           //configura el puerto en el que correrá la app.
+  await app.listen(process.env.PORT);           //configura el puerto en el que correrá la app.
+  console.log(`App running on port ${process.env.PORT}`);
 }
 bootstrap();
