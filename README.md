@@ -404,5 +404,6 @@ para esto:
   7.  `heroku git:remote -a pokedex-fhj`
 
       En este punto se abre un navegadoy y pide loguearse.
+  8. Configurar variables de entorno dentro de la página web de heroku.    
 
-  8. `git push heroku master`
+  9. `git push heroku master`
