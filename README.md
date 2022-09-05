@@ -385,21 +385,24 @@ para esto:
       _**Antes**_
 
       ``` 
-        "start": "node dist/main",
-        "start:prod": "nest start",
+        "start": "nest start",
+        "start:prod": "node dist/main",
       ```
 
       _**Después**_
 
       ```
-        "start": "nest start",
-        "start:prod": "node dist/main",
+        "start": "node dist/main",
+        "start:prod": "nest start",
       ```
   2. En el main.ts asegurarse que el `await app.listen(process.env.PORT)` esté con `(process.env.PORT)` y no directamente con el puerto, eg. 3000, porque este puerto será asignado por heroku.
 
   3. En la página de heroku logearse y crear una nueva app.
   4. Verificar que se tiene Heroku Cli instalado `heroku --version`.
-  5. git add.
+  5. git add .
   6. git commit -m "despliegue a heroku"
   7.  `heroku git:remote -a pokedex-fhj`
+
+      En este punto se abre un navegadoy y pide loguearse.
+
   8. `git push heroku master`
