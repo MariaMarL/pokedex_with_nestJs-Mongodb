@@ -413,7 +413,7 @@ para esto:
 
   * `.dockerignore` 
   * `docker-compose.prod.yaml` 
-  * `dockerfilw` 
+  * `dockerfile` 
   1. Crear el archivo `.env.prod`
   2. Llenar las variables de entorno para producción.
   3. Construir la nueva imagen
