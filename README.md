@@ -407,3 +407,16 @@ para esto:
   8. Configurar variables de entorno dentro de la página web de heroku.    
 
   9. `git push heroku master`
+
+  # ***Docker***
+  `https://gist.github.com/Klerith/e7861738c93712840ab3a38674843490`
+
+  * `.dockerignore` 
+  * `docker-compose.prod.yaml` 
+  * `dockerfilw` 
+  1. Crear el archivo `.env.prod`
+  2. Llenar las variables de entorno para producción.
+  3. Construir la nueva imagen
+      ```
+      docker-compose -f docker-compose.prod.yaml --env-file .env.prod up --build
+      ```
