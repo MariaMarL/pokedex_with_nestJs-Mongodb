@@ -140,6 +140,8 @@ export class PokemonModule {}
 
 ## ***Query Parámeters***
 
+FH = https://github.com/typestack/class-validator#validation-decorators
+
 Son los parámetros que se reciben en la url, eg:
 ``` localhost:3000/api/v2/pokemon?limit=10&offset=5 ```
 
