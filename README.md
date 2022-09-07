@@ -38,6 +38,8 @@ localhost:3000/api/v2/seed
 
 # ***Conectar nest con Mongo***
 
+https://docs.nestjs.com/techniques/mongodb
+
 ## 1. Instalar mongose
 ```
 npm i @nestjs/mongoose mongoose
